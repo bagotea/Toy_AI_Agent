@@ -5,6 +5,7 @@ import argparse
 from prompts import *
 from call_function import available_functions, call_function
 import json
+import sys
 
 load_dotenv()
 api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -24,31 +25,39 @@ messages = [
     {"role": "user", "content": args.prompt},
 ]
 
-response = client.chat.completions.create(
-    model="openrouter/free",
-    messages=messages,
-    tools=available_functions
-)
+
+def LLM_Call(messages_arr, tools_to_give, model = "openrouter/free"):
+    return client.chat.completions.create(
+        model=model,
+        messages=messages_arr,
+        tools=tools_to_give,
+    )
 
 def main():
     if api_key == None:
         raise RuntimeError("no api key detected")
-    if response.usage == None:
-        raise RuntimeError("failed API request")
     if args.verbose:
         print(f"User prompt: {args.prompt}")
         print(f"Prompt tokens: {response.usage.prompt_tokens}\nResponse tokens: {response.usage.completion_tokens}")
-    LLM_Response = response.choices[0].message
-    if LLM_Response.tool_calls:
-        for call in LLM_Response.tool_calls:
-            function_args = json.loads(call.function.arguments or "{}")
-            result_message = call_function(call)
-            if not result_message['content']:
-                raise Exception("ERROR: no content from result_message")
-            if args.verbose:
-                print(f"-> {result_message['content']}")
-    print(LLM_Response.content)
-    return None
+    for i in range(20):
+        response = LLM_Call(messages, available_functions)
+        message = response.choices[0].message
+        messages.append(message)
+        if message.tool_calls:
+            for call in message.tool_calls:
+                function_args = json.loads(call.function.arguments or "{}")
+                result_message = call_function(call, args.verbose)
+                messages.append(result_message)
+                if not result_message['content']:
+                    raise Exception("ERROR: no content from tool call")
+                if args.verbose:
+                    print(f"-> {result_message['content']}")
+        else:
+            return message.content
+        if i == 20:
+            sys.exit(1)
 
 
-main()
+
+
+print(main())
