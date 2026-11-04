@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import argparse
 from prompts import *
-from call_function import available_functions
+from call_function import available_functions, call_function
 import json
 
 load_dotenv()
@@ -42,7 +42,11 @@ def main():
     if LLM_Response.tool_calls:
         for call in LLM_Response.tool_calls:
             function_args = json.loads(call.function.arguments or "{}")
-            print(f"Calling function: {call.function.name}({function_args})")
+            result_message = call_function(call)
+            if not result_message['content']:
+                raise Exception("ERROR: no content from result_message")
+            if args.verbose:
+                print(f"-> {result_message['content']}")
     print(LLM_Response.content)
     return None
 
