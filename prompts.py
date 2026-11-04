@@ -9,4 +9,5 @@ When a user asks a question or makes a request, make a function call plan. You c
 - Write or overwrite files
 
 All paths you provide should be relative to the working directory which you must not specify. In this case, the working directory is the directory of a calculator application coded in python.
+The  main calculator code is kept in pkg/calculator.py
 """
