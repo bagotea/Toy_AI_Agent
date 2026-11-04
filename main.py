@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 import argparse
+from prompts import *
 
 load_dotenv()
 api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -17,6 +18,7 @@ parser.add_argument("--verbose", action="store_true", help="Enable verbose outpu
 args = parser.parse_args()
 
 messages = [
+    {"role": "system", "content": system_prompt},
     {"role": "user", "content": args.prompt},
 ]
 
